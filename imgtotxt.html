@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image To Text</title>
+
+    <script src='https://unpkg.com/tesseract.js@v2.1.0/dist/tesseract.min.js'></script>
+</head>
+<body>
+    <textarea type="text" id="img-to-txt-field-1"></textarea>
+    <textarea type="text" id="img-to-txt-field-2"></textarea>
+    <textarea type="text" id="img-to-txt-field-3"></textarea>
+
+    <script>
+        /**
+         * This handler retrieves the images from the clipboard as a blob and returns it in a callback.
+         * 
+         * @param pasteEvent (the event listener)
+         * @param callback (the callback function)
+         * 
+         * created by: Ahmed Sadman
+         * created at: 31-05-2022
+         */
+        const getImageFromClipboard = (pasteEvent, callback) => {
+            if(pasteEvent.clipboardData === false){
+                if(typeof(callback) === "function"){
+                    callback(undefined)
+                }
+            }
+
+            let items = pasteEvent.clipboardData.items;
+
+            if(items === undefined){
+                if(typeof(callback) === "function"){
+                    callback(undefined)
+                }
+            }
+
+            for (let i = 0; i < items.length; i++) {
+                // Skip content if not image
+                if (items[i].type.indexOf("image") == -1){
+                    continue
+                }
+
+                // Retrieve image of clipboard as blob
+                let blob = items[i].getAsFile();
+
+                if(typeof(callback) === "function"){
+                    /**
+                     * Initialize the library for converting imageblob as text
+                     * 
+                     * @method recognize (function)
+                     * @param image (img or img link or img blob)
+                     * @param language (eng)
+                     * @param logger_object (for tracking loading status)
+                     * 
+                     * created by: Ahmed Sadman
+                     * created at: 31-05-2022
+                     */
+                    Tesseract
+                        .recognize(blob, 'eng', { logger: log => callback(loading = true, blob, log) })
+                        .then(({ data: { text } }) => { callback(loading = false, blob, text) })
+                }
+            }
+        }
+
+        //on Ctrl + V below code will start working
+        window.addEventListener("paste", (e) => {
+            // Handler for getting image from windows saved clipboard
+            getImageFromClipboard(e, function(loading, imageBlob, convertedString = ""){
+                // Desired input field to show the output
+                let inputbox = document.getElementById(e.target.id);
+
+                if(loading){
+                    inputbox.value = 'loading...'
+                } else {
+                    // breaking multiple lines into one single line
+                    // then set to html input field for showing output
+                    inputbox.value = convertedString?.split("\n")?.join(" ").trim()
+                }
+            });
+        }, false)
+
+    </script>
+</body>
+</html>
